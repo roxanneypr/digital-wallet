@@ -4,8 +4,21 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+// Define the props interfaces for the components
+interface LoginProps {
+  onLogin: () => void;
+}
+
+interface RegisterProps {
+  onLogin: () => void;
+}
+
+interface DashboardProps {
+  onLogout: () => void;
+}
+
+const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const handleLogin = () => {
     setIsAuthenticated(true);

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Home, CreditCard, DollarSign, Bell, User, Settings, LogOut, ShoppingBag } from 'lucide-react';
+import {
+  Home, CreditCard, DollarSign, Bell, User, Settings, LogOut, ShoppingBag
+} from 'lucide-react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import HomeView from './views/HomeView';
 import TransactionsView from './views/TransactionsView';
@@ -9,8 +11,12 @@ import SettingsView from './views/SettingsView';
 import AccountManagement from './AccountManagement';
 import StorePurchase from './StorePurchase';
 
-function Dashboard({ onLogout }) {
-  const [activeTab, setActiveTab] = useState('home');
+interface DashboardProps {
+  onLogout: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+  const [activeTab, setActiveTab] = useState<string>('home');
   const navigate = useNavigate();
 
   const sidebarLinks = [
@@ -23,7 +29,7 @@ function Dashboard({ onLogout }) {
     { icon: <Settings />, label: 'Settings', key: 'settings' },
   ];
 
-  const handleTabChange = (key) => {
+  const handleTabChange = (key: string) => {
     setActiveTab(key);
     navigate(key);
   };

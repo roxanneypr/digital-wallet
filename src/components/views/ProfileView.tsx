@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, Lock } from 'lucide-react';
+import React, { useState, ChangeEvent } from 'react';
+import { User, Mail, Phone } from 'lucide-react';
 
-function ProfileView() {
-  const [profile, setProfile] = useState({
+interface Profile {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+const ProfileView: React.FC = () => {
+  const [profile, setProfile] = useState<Profile>({
     name: 'John Doe',
     email: 'john.doe@example.com',
     phone: '+1 (555) 123-4567',
   });
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -20,7 +26,7 @@ function ProfileView() {
     alert('Profile updated successfully!');
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile((prevProfile) => ({ ...prevProfile, [name]: value }));
   };

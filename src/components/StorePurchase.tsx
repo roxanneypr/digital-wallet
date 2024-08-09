@@ -1,27 +1,39 @@
 import React, { useState } from 'react';
 import { CreditCard, QrCode, X } from 'lucide-react';
 
-const StorePurchase = () => {
-  const [scanningMode, setScanningMode] = useState(null); // 'store' or 'item'
-  const [selectedStore, setSelectedStore] = useState(null);
-  const [cart, setCart] = useState([]);
-  const [total, setTotal] = useState(0);
+interface Store {
+  id: number;
+  name: string;
+  distance: string;
+}
+
+interface Item {
+  id: number;
+  name: string;
+  price: number;
+}
+
+const StorePurchase: React.FC = () => {
+  const [scanningMode, setScanningMode] = useState<'store' | 'item' | null>(null);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [cart, setCart] = useState<Item[]>([]);
+  const [total, setTotal] = useState<number>(0);
 
   // Simulated database of QR codes
-  const qrCodes = {
+  const qrCodes: { [key: string]: Store | Item } = {
     store123: { id: 1, name: 'Grocery Store', distance: '0.5 miles' },
     store456: { id: 2, name: 'Electronics Shop', distance: '1.2 miles' },
     item789: { id: 1, name: 'Milk', price: 3.99 },
     itemABC: { id: 2, name: 'Bread', price: 2.49 },
   };
 
-  const startScanning = (mode) => {
+  const startScanning = (mode: 'store' | 'item') => {
     setScanningMode(mode);
   };
 
-  const handleScan = (qrCode) => {
+  const handleScan = (qrCode: string) => {
     if (scanningMode === 'store') {
-      const store = qrCodes[qrCode];
+      const store = qrCodes[qrCode] as Store;
       if (store) {
         setSelectedStore(store);
         setScanningMode(null);
@@ -29,7 +41,7 @@ const StorePurchase = () => {
         alert('Invalid store QR code');
       }
     } else if (scanningMode === 'item') {
-      const item = qrCodes[qrCode];
+      const item = qrCodes[qrCode] as Item;
       if (item) {
         addToCart(item);
         setScanningMode(null);
@@ -39,13 +51,13 @@ const StorePurchase = () => {
     }
   };
 
-  const addToCart = (item) => {
+  const addToCart = (item: Item) => {
     setCart([...cart, item]);
     setTotal(total + item.price);
   };
 
-  const removeFromCart = (item) => {
-    const newCart = cart.filter(i => i.id !== item.id);
+  const removeFromCart = (item: Item) => {
+    const newCart = cart.filter((i) => i.id !== item.id);
     setCart(newCart);
     setTotal(total - item.price);
   };
@@ -60,23 +72,21 @@ const StorePurchase = () => {
   };
 
   // Simulated QR code scanner
-  const QRScanner = ({ onScan }) => (
+  const QRScanner: React.FC<{ onScan: (qrCode: string) => void }> = ({ onScan }) => (
     <div className="bg-gray-200 p-4 rounded-lg text-center">
       <p className="mb-2">Scanning QR Code...</p>
-      <input 
-        type="text" 
-        placeholder="Enter QR code" 
+      <input
+        type="text"
+        placeholder="Enter QR code"
         className="p-2 border rounded"
         onKeyPress={(e) => {
           if (e.key === 'Enter') {
-            onScan(e.target.value);
-            e.target.value = '';
+            onScan((e.target as HTMLInputElement).value);
+            (e.target as HTMLInputElement).value = '';
           }
         }}
       />
-      <p className="mt-2 text-sm text-gray-600">
-        (In a real app, this would use the device's camera)
-      </p>
+      <p className="mt-2 text-sm text-gray-600">(In a real app, this would use the device's camera)</p>
     </div>
   );
 
@@ -91,7 +101,7 @@ const StorePurchase = () => {
             {scanningMode === 'store' ? (
               <QRScanner onScan={handleScan} />
             ) : (
-              <button 
+              <button
                 onClick={() => startScanning('store')}
                 className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
@@ -114,7 +124,7 @@ const StorePurchase = () => {
                 {scanningMode === 'item' ? (
                   <QRScanner onScan={handleScan} />
                 ) : (
-                  <button 
+                  <button
                     onClick={() => startScanning('item')}
                     className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                   >
@@ -126,11 +136,11 @@ const StorePurchase = () => {
               <div>
                 <h4 className="text-md font-medium text-gray-900 mb-2">Your Cart</h4>
                 <ul className="divide-y divide-gray-200">
-                  {cart.map(item => (
+                  {cart.map((item) => (
                     <li key={item.id} className="py-2">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-gray-900">{item.name} - ${item.price.toFixed(2)}</p>
-                        <button 
+                        <button
                           onClick={() => removeFromCart(item)}
                           className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         >
@@ -142,7 +152,7 @@ const StorePurchase = () => {
                 </ul>
                 <div className="mt-4">
                   <p className="text-lg font-medium text-gray-900">Total: ${total.toFixed(2)}</p>
-                  <button 
+                  <button
                     onClick={processPayment}
                     className="mt-2 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >

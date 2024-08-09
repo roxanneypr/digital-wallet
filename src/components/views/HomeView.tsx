@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownLeft, Wallet } from 'lucide-react';
 
-function HomeView() {
-  const [balance, setBalance] = useState(5000);
+const HomeView: React.FC = () => {
+  const [balance, setBalance] = useState<number>(5000);
 
   const handleSendMoney = () => {
-    const amount = parseFloat(prompt("Enter amount to send:"));
-    if (amount && amount > 0 && amount <= balance) {
-      setBalance(prevBalance => prevBalance - amount);
+    const amount = parseFloat(prompt("Enter amount to send:") || '0');
+    if (amount > 0 && amount <= balance) {
+      setBalance((prevBalance) => prevBalance - amount);
       alert(`$${amount} sent successfully!`);
     } else {
       alert("Invalid amount or insufficient funds.");
@@ -15,8 +15,8 @@ function HomeView() {
   };
 
   const handleRequestMoney = () => {
-    const amount = parseFloat(prompt("Enter amount to request:"));
-    if (amount && amount > 0) {
+    const amount = parseFloat(prompt("Enter amount to request:") || '0');
+    if (amount > 0) {
       alert(`Request for $${amount} sent successfully!`);
     } else {
       alert("Invalid amount.");
@@ -24,9 +24,9 @@ function HomeView() {
   };
 
   const handleAddFunds = () => {
-    const amount = parseFloat(prompt("Enter amount to add:"));
-    if (amount && amount > 0) {
-      setBalance(prevBalance => prevBalance + amount);
+    const amount = parseFloat(prompt("Enter amount to add:") || '0');
+    if (amount > 0) {
+      setBalance((prevBalance) => prevBalance + amount);
       alert(`$${amount} added successfully!`);
     } else {
       alert("Invalid amount.");
@@ -62,6 +62,6 @@ function HomeView() {
       </div>
     </div>
   );
-}
+};
 
 export default HomeView;
