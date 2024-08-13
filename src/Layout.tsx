@@ -19,6 +19,7 @@ function Layout({ children }: LayoutProps) {
     const storedTheme = localStorage.getItem('theme') as 'light' | 'dark';
     if (storedTheme) {
       setTheme(storedTheme);
+      document.documentElement.classList.toggle('dark', storedTheme === 'dark');
     }
   }, []);
 
@@ -40,7 +41,7 @@ function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className={`${theme} flex h-screen bg-gray-100 dark:bg-gray-900`}>
+    <div className={`flex h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
       {/* Sidebar */}
       <Sidebar 
         activeTab={activeTab} 
