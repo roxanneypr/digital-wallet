@@ -19,7 +19,7 @@ function QuickActions({ onSendMoney, onRequestMoney, onAddFunds }: QuickActionsP
           </button>
           <button onClick={onRequestMoney} className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200 flex items-center justify-center">
             <ArrowDownLeft className="mr-2" size={18} />
-            Request Money
+            Withdraw Money
           </button>
           <button onClick={onAddFunds} className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200 flex items-center justify-center">
             <Wallet className="mr-2" size={18} />

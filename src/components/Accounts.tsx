@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlusCircle } from 'lucide-react';
 
 function AccountsView() {
@@ -10,13 +10,16 @@ function AccountsView() {
   const handleAddAccount = () => {
     const name = prompt("Enter account name:");
     if (name) {
-      const newAccount = {
-        id: accounts.length + 1,
-        name,
-        balance: 0,
-        number: `****${Math.floor(1000 + Math.random() * 9000)}`,
-      };
-      setAccounts([...accounts, newAccount]);
+  
+      setTimeout(() => {
+        const newAccount = {
+          id: accounts.length + 1,
+          name,
+          balance: 0,
+          number: `****${Math.floor(1000 + Math.random() * 9000)}`,
+        };
+        setAccounts([...accounts, newAccount]);
+      }, 1500); // Simulate account creation
     }
   };
 
@@ -33,11 +36,11 @@ function AccountsView() {
       ))}
       <button
         onClick={handleAddAccount}
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200 flex items-center justify-center"
+        className="w-full bg-[#0c55e9] text-white py-2 px-4 rounded hover:bg-[#0a4bcc] transition duration-200 flex items-center justify-center"
       >
         <PlusCircle className="mr-2" size={18} />
         Add New Account
-      </button>
+      </button> 
     </div>
   );
 }

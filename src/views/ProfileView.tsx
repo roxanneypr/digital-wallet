@@ -7,7 +7,7 @@ interface Profile {
   phone: string;
 }
 
-const ProfileView: React.FC = () => {
+function ProfileView() {
   const [profile, setProfile] = useState<Profile>({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -22,7 +22,6 @@ const ProfileView: React.FC = () => {
 
   const handleSave = () => {
     setIsEditing(false);
-    // Here you would typically make an API call to update the user's profile
     alert('Profile updated successfully!');
   };
 
@@ -32,13 +31,13 @@ const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div className="bg-white shadow overflow-hidden sm:rounded-lg max-w-2xl mx-auto p-4 sm:p-6">
       <div className="px-4 py-5 sm:px-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900">User Profile</h3>
       </div>
       <div className="border-t border-gray-200">
         <dl>
-          <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <div className="bg-gray-50 px-4 py-5 grid grid-cols-1 sm:grid-cols-3 gap-y-4 sm:gap-x-4 sm:px-6">
             <dt className="text-sm font-medium text-gray-500 flex items-center">
               <User className="mr-2" size={18} /> Full name
             </dt>
@@ -56,7 +55,7 @@ const ProfileView: React.FC = () => {
               )}
             </dd>
           </div>
-          <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <div className="bg-white px-4 py-5 grid grid-cols-1 sm:grid-cols-3 gap-y-4 sm:gap-x-4 sm:px-6">
             <dt className="text-sm font-medium text-gray-500 flex items-center">
               <Mail className="mr-2" size={18} /> Email address
             </dt>
@@ -74,7 +73,7 @@ const ProfileView: React.FC = () => {
               )}
             </dd>
           </div>
-          <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <div className="bg-gray-50 px-4 py-5 grid grid-cols-1 sm:grid-cols-3 gap-y-4 sm:gap-x-4 sm:px-6">
             <dt className="text-sm font-medium text-gray-500 flex items-center">
               <Phone className="mr-2" size={18} /> Phone number
             </dt>

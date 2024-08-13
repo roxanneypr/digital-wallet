@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Home, CreditCard, DollarSign, Bell, User, Settings, LogOut, ShoppingBag } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,13 +22,11 @@ function Sidebar({ activeTab, onTabChange, onLogout, isOpen, onToggle }: Sidebar
 
   return (
     <>
-
-
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 transform lg:transform-none lg:relative lg:translate-x-0 transition-transform duration-200 ease-in-out ${
+        className={`fixed inset-y-0 left-0 transform lg:transform-none lg:relative lg:translate-x-0 transition-transform duration-200 ease-in-out z-50 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } w-64 bg-white shadow-md z-30 lg:z-auto lg:w-64`}
+        } w-64 bg-white shadow-md lg:w-64`}
       >
         <div className="p-4">
           <h1 className="text-2xl font-bold text-blue-600">DigiWallet</h1>
@@ -67,7 +65,7 @@ function Sidebar({ activeTab, onTabChange, onLogout, isOpen, onToggle }: Sidebar
       {/* Overlay for small screens */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black opacity-50 z-20 lg:hidden"
+          className="fixed inset-0 bg-black opacity-50 z-40 lg:hidden"
           onClick={onToggle}
         ></div>
       )}

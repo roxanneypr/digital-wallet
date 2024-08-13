@@ -49,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // AuthProvider.tsx
 
   const login = async (email: string, password: string) => {
-    console.log('Login attempt:', email, password);
     // Simulate an API call
     return new Promise<void>((resolve, reject) => {
       if (email === 'test@example.com' && password === 'password123') {

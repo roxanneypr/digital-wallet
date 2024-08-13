@@ -11,7 +11,7 @@ interface Settings {
   twoFactor: boolean;
 }
 
-const SettingsView: React.FC = () => {
+function SettingsView() {
   const [settings, setSettings] = useState<Settings>({
     notifications: {
       email: true,
@@ -47,7 +47,7 @@ const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl mx-auto p-4">
       <div className="bg-white shadow overflow-hidden sm:rounded-lg">
         <div className="px-4 py-5 sm:px-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 flex items-center">

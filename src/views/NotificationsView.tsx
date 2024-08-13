@@ -8,7 +8,7 @@ interface Notification {
   time: string;
 }
 
-const NotificationsView: React.FC = () => {
+function NotificationsView() {
   const [notifications, setNotifications] = useState<Notification[]>([
     { id: 1, type: 'alert', message: 'Low balance in your checking account', time: '2 hours ago' },
     { id: 2, type: 'transaction', message: 'You received $500 from John Doe', time: '1 day ago' },
@@ -18,21 +18,24 @@ const NotificationsView: React.FC = () => {
   const getIcon = (type: 'alert' | 'transaction' | 'card') => {
     switch (type) {
       case 'alert':
-        return <Bell className="text-yellow-500" />;
+        return <Bell className="text-yellow-500 w-6 h-6" />;
       case 'transaction':
-        return <DollarSign className="text-green-500" />;
+        return <DollarSign className="text-green-500 w-6 h-6" />;
       case 'card':
-        return <CreditCard className="text-blue-500" />;
+        return <CreditCard className="text-blue-500 w-6 h-6" />;
       default:
-        return <Bell className="text-gray-500" />;
+        return <Bell className="text-gray-500 w-6 h-6" />;
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 sm:p-6 lg:p-8">
       {notifications.map((notification) => (
-        <div key={notification.id} className="bg-white shadow overflow-hidden sm:rounded-lg p-4 flex items-start">
-          <div className="flex-shrink-0 mr-4">
+        <div
+          key={notification.id}
+          className="bg-white shadow overflow-hidden sm:rounded-lg p-4 flex items-start sm:flex-row flex-col"
+        >
+          <div className="flex-shrink-0 sm:mr-4 mb-2 sm:mb-0">
             {getIcon(notification.type)}
           </div>
           <div className="flex-1 min-w-0">

@@ -6,9 +6,10 @@ import TransactionsView from '../views/TransactionsView';
 import NotificationsView from '../views/NotificationsView';
 import ProfileView from '../views/ProfileView';
 import SettingsView from '../views/SettingsView';
-import AccountManagement from '../components/AccountManagement';
+import AccountManagement from '../views/AccountManagementView';
 import StorePurchase from '../components/StorePurchase';
 import Layout from '../Layout';
+import AccountsView from '../components/Accounts';
 
 function Dashboard() {
   return (

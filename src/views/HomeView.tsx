@@ -3,6 +3,10 @@ import TotalBalance from '../components/TotalBalance';
 import QuickActions from '../components/QuickActions';
 import UserProfileOverview from '../components/UserProfileOverview';
 import WalletOverview from '../components/WalletOverview';
+import AccountsView from '../components/Accounts';
+import DepositModal from '../components/modals/DepositModal';
+import WithdrawModal from '../components/modals/WithdrawModal';
+import TransferModal from '../components/modals/TransferModal';
 
 function HomeView() {
   // Initial data declaration (simulating backend data)
@@ -18,6 +22,11 @@ function HomeView() {
   const [user, setUser] = useState<{ name: string; email: string }>({ name: '', email: '' });
   const [loading, setLoading] = useState<boolean>(true);
 
+  // State for modals
+  const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
+
   useEffect(() => {
     // Simulate fetching data from an API or other data sources
     const fetchData = async () => {
@@ -25,7 +34,7 @@ function HomeView() {
       try {
         // Simulate a delay for fetching data
         await new Promise((resolve) => setTimeout(resolve, 5000));
-        
+
         // Set the state with the initial data
         setBalance(initialData.balance);
         setUser(initialData.user);
@@ -39,8 +48,7 @@ function HomeView() {
     fetchData();
   }, []);
 
-  const handleSendMoney = () => {
-    const amount = parseFloat(prompt("Enter amount to send:") || '0');
+  const handleSendMoney = (amount: number) => {
     if (amount > 0 && amount <= balance) {
       setBalance((prevBalance) => prevBalance - amount);
       alert(`$${amount} sent successfully!`);
@@ -58,8 +66,7 @@ function HomeView() {
     }
   };
 
-  const handleAddFunds = () => {
-    const amount = parseFloat(prompt("Enter amount to add:") || '0');
+  const handleAddFunds = (amount: number) => {
     if (amount > 0) {
       setBalance((prevBalance) => prevBalance + amount);
       alert(`$${amount} added successfully!`);
@@ -70,19 +77,49 @@ function HomeView() {
 
   if (loading) {
     return (
-      <section className="w-screen h-screen flex items-center justify-center">
-        <span className="loading loading-infinity loading-lg text-primary"></span>
-      </section>
-    ); // Show loading state while data is being fetched
+      <div className="fixed inset-0 flex items-center justify-center">
+        <img
+          src="/assets/loading.svg"
+          alt="Loading..."
+          className="w-16 h-16"
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-      <UserProfileOverview userName={user.name} userEmail={user.email} />
-      <TotalBalance balance={balance} />
-      <QuickActions onSendMoney={handleSendMoney} onRequestMoney={handleRequestMoney} onAddFunds={handleAddFunds} />
-      <WalletOverview />
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+        <UserProfileOverview userName={user.name} userEmail={user.email} />
+        <TotalBalance balance={balance} />
+        <QuickActions
+          onSendMoney={() => setIsTransferOpen(true)}
+          onRequestMoney={() => setIsWithdrawOpen(true)}
+          onAddFunds={() => setIsDepositOpen(true)}
+        />
+        <WalletOverview />
+        <AccountsView />
+      </div>
+
+      {/* Modals */}
+      <DepositModal
+        isOpen={isDepositOpen}
+        onClose={() => setIsDepositOpen(false)}
+        onDeposit={handleAddFunds}
+      />
+
+      <WithdrawModal
+        isOpen={isWithdrawOpen}
+        onClose={() => setIsWithdrawOpen(false)}
+        onWithdraw={handleRequestMoney}
+      />
+
+      <TransferModal
+        isOpen={isTransferOpen}
+        onClose={() => setIsTransferOpen(false)}
+        onTransfer={(amount, recipient) => handleSendMoney(amount)}
+      />
+    </>
   );
 }
 
