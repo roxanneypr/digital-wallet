@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContextType, User } from './AuthTypes'; // Import your types
+import { AuthContextType, User } from './AuthTypes';
 
 // Create the AuthContext with the correct type
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -11,67 +11,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check for existing auth token and user info in localStorage on component mount
     const token = localStorage.getItem('authToken');
     const userInfo = localStorage.getItem('userInfo');
 
     if (token && userInfo) {
-      // Optionally, you could verify the token's validity on the server before setting it
       setAuthToken(token);
       setUser(JSON.parse(userInfo));
     }
   }, []);
 
-  /* const login = async (username: string, password: string) => {
-    // Example: Replace with your API call
-    const response = await fetch('/api/login', {
+  const login = async (email: string, password: string) => {
+    const response = await fetch('http://localhost:3000/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (response.ok) {
       const data = await response.json();
       const token = data.token;
 
-      // Assuming the token contains the user info in its payload
-      const decodedUser = JSON.parse(atob(token.split('.')[1])) as User;
+      // Construct user information from response
+      const userInfo = {
+        id: data.user.id,
+        username: data.user.firstName,
+        email: data.user.email,
+      } as User;
 
+      // Store the token and user info in localStorage
       localStorage.setItem('authToken', token);
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+
       setAuthToken(token);
-      setUser(decodedUser);
+      setUser(userInfo);
 
       navigate('/dashboard');
     } else {
-      throw new Error('Login failed');
+      const data = await response.json();
+      throw new Error(data.error || 'Login failed');
     }
-  }; */
-
-  // AuthProvider.tsx
-
-  const login = async (email: string, password: string) => {
-    // Simulate an API call
-    return new Promise<void>((resolve, reject) => {
-      if (email === 'test@example.com' && password === 'password123') {
-        // Simulate setting a token and user
-        const mockToken = 'mock-token';
-        const userInfo: User = { id: '1', username: 'testuser', email };
-
-        // Store token and user info in localStorage
-        localStorage.setItem('authToken', mockToken);
-        localStorage.setItem('userInfo', JSON.stringify(userInfo));
-
-        setAuthToken(mockToken);
-        setUser(userInfo);
-        resolve();
-      } else {
-        reject(new Error('Invalid credentials'));
-      }
-    });
   };
-  
 
   const logout = () => {
+    // Clear token and user info from localStorage on logout
     localStorage.removeItem('authToken');
+    localStorage.removeItem('userInfo');
     setAuthToken(null);
     setUser(null);
     navigate('/login');

@@ -6,19 +6,17 @@ function Login() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null); // State to hold error message
-  const navigate = useNavigate();
   const { login } = useAuth(); // Access the login function from the AuthProvider
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null); // Clear any previous errors
     try {
-      // Use the login function from the AuthProvider
+      // Attempt to log the user in
       await login(email, password);
-      navigate('/dashboard'); // Navigate to dashboard after successful login
     } catch (err) {
       console.error('Login failed:', err);
-      setError('Login failed. Please check your credentials and try again.'); // Set the error message
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
   };
 

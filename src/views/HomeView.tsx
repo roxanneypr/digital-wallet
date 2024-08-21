@@ -33,7 +33,7 @@ function HomeView() {
       setLoading(true);
       try {
         // Simulate a delay for fetching data
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Set the state with the initial data
         setBalance(initialData.balance);

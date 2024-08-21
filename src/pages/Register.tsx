@@ -1,26 +1,45 @@
 import React, { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthProvider'; // Import the useAuth hook
 
 function Register() {
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Access the login function from the AuthProvider
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Here you would typically make an API call to register the user
-    console.log('Registration attempt:', name, email, password);
 
     try {
-      // Simulate successful registration and log the user in
-      await login(email, password);
-      navigate('/dashboard'); // Navigate to dashboard after successful registration
+      const response = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName: name.split(' ')[0],
+          lastName: name.split(' ').slice(1).join(' '),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      const data = await response.json();
+      console.log('Registration successful:', data);
+
+      // Set the success message instead of logging the user in automatically
+      setMessage('Registration successful! Please check your email to verify your account.');
+      
     } catch (err) {
       console.error('Registration failed:', err);
-      // Optionally, handle the error (e.g., display a message to the user)
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
   };
 
@@ -28,6 +47,8 @@ function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md w-96">
         <h2 className="text-2xl font-bold mb-4">Register for DigiWallet</h2>
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {message && <p className="text-green-500 text-sm mb-4">{message}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
