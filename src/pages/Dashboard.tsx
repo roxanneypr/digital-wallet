@@ -10,6 +10,7 @@ import AccountManagement from '../views/AccountManagementView';
 import StorePurchase from '../components/StorePurchase';
 import Layout from '../Layout';
 import AccountsView from '../components/Accounts';
+import QRPaymentsView from '../views/QRPaymentsView';
 
 function Dashboard() {
   return (
@@ -19,7 +20,7 @@ function Dashboard() {
         <Route path="home" element={<HomeView />} />
         <Route path="accounts" element={<AccountManagement />} />
         <Route path="transactions" element={<TransactionsView />} />
-        <Route path="store-purchase" element={<StorePurchase />} />
+        <Route path="store-purchase" element={<QRPaymentsView />} />
         <Route path="notifications" element={<NotificationsView />} />
         <Route path="profile" element={<ProfileView />} />
         <Route path="settings" element={<SettingsView />} />

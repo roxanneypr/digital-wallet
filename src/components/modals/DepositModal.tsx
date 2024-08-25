@@ -1,18 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface DepositModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDeposit: (amount: number) => void;
+  onDeposit: (amount: number, paymentMethodId: string) => void;
 }
 
 function DepositModal({ isOpen, onClose, onDeposit }: DepositModalProps) {
-  const [amount, setAmount] = React.useState<number>(0);
+  const [amount, setAmount] = useState<number>(0);
+  const [paymentMethodId, setPaymentMethodId] = useState<string>('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onDeposit(amount);
-    onClose();
+    if (amount > 0 && paymentMethodId) {
+      onDeposit(amount, paymentMethodId);
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -28,6 +31,16 @@ function DepositModal({ isOpen, onClose, onDeposit }: DepositModalProps) {
               type="number"
               value={amount}
               onChange={(e) => setAmount(parseFloat(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#0c55e9] focus:border-[#0c55e9]"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700">Payment Method ID</label>
+            <input
+              type="text"
+              value={paymentMethodId}
+              onChange={(e) => setPaymentMethodId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#0c55e9] focus:border-[#0c55e9]"
               required
             />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, QrCode, X } from 'lucide-react';
+import { CreditCard, QrCode, X, CheckCircle } from 'lucide-react';
 
 interface Store {
   id: number;
@@ -18,6 +18,9 @@ const StorePurchase: React.FC = () => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [cart, setCart] = useState<Item[]>([]);
   const [total, setTotal] = useState<number>(0);
+  const [paymentMethodId, setPaymentMethodId] = useState<string>(''); // Store payment method ID
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null); // Store QR Code data
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   // Simulated database of QR codes
   const qrCodes: { [key: string]: Store | Item } = {
@@ -62,16 +65,61 @@ const StorePurchase: React.FC = () => {
     setTotal(total - item.price);
   };
 
-  const processPayment = () => {
-    // In a real app, this would integrate with a payment gateway
-    alert(`Payment of $${total.toFixed(2)} processed successfully!`);
-    // Here you would typically call an API to record the transaction
-    setCart([]);
-    setTotal(0);
-    setSelectedStore(null);
+  const generateQrCode = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+
+      const response = await fetch('http://localhost:3000/api/wallet/generate-qr', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount: total }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate QR payment');
+      }
+
+      const { qrCodeDataURL, paymentId } = await response.json();
+      setQrCodeData(qrCodeDataURL);
+      console.log(`Generated QR code for payment ID: ${paymentId}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`Failed to generate QR code: ${error.message}`);
+      } else {
+        alert('Failed to generate QR code due to an unknown error');
+      }
+    }
   };
 
-  // Simulated QR code scanner
+  const processPayment = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+
+      if (!qrCodeData) {
+        alert('Please generate a QR code first.');
+        return;
+      }
+
+      // Here you would typically call an API to record the transaction
+      alert(`Payment of $${total.toFixed(2)} processed successfully!`);
+      setCart([]);
+      setTotal(0);
+      setSelectedStore(null);
+      setQrCodeData(null); // Clear the QR code after successful payment
+      setPaymentCompleted(true);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`Payment failed: ${error.message}`);
+      } else {
+        alert('Payment failed due to an unknown error');
+      }
+    }
+  };
+
   const QRScanner: React.FC<{ onScan: (qrCode: string) => void }> = ({ onScan }) => (
     <div className="bg-gray-200 p-4 rounded-lg text-center">
       <p className="mb-2">Scanning QR Code...</p>
@@ -152,16 +200,29 @@ const StorePurchase: React.FC = () => {
                 </ul>
                 <div className="mt-4">
                   <p className="text-lg font-medium text-gray-900">Total: ${total.toFixed(2)}</p>
-                  <button
-                    onClick={processPayment}
-                    className="mt-2 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    <CreditCard size={18} className="mr-2" />
-                    Pay Now
-                  </button>
+                  {qrCodeData ? (
+                    <div className="mt-4">
+                      <img src={qrCodeData} alt="QR Code" className="mx-auto" />
+                      <p className="text-center text-green-600 mt-2">Scan the QR code above to complete the payment.</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={generateQrCode}
+                      className="mt-2 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <QrCode size={18} className="mr-2" />
+                      Generate QR Code
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
+            {paymentCompleted && (
+              <div className="mt-4 text-center text-green-600">
+                <CheckCircle size={24} className="inline-block mr-2" />
+                Payment Completed Successfully!
+              </div>
+            )}
           </div>
         </div>
       )}

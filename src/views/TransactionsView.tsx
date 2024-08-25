@@ -27,19 +27,105 @@ function TransactionsView() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleAddFunds = (amount: number) => {
-    console.log(`Deposited: $${amount}`);
-    // Add logic to update balance here
+  const fetchTransactions = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('http://localhost:3000/api/wallet/transactions', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch transactions');
+      }
+
+      const data = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+      setError('An error occurred while fetching transactions.');
+    }
   };
 
-  const handleTransferMoney = (amount: number, recipient: string) => {
-    console.log(`Transferred $${amount} to ${recipient}`);
-    // Add logic to handle money transfer here
+  const handleAddFunds = async (amount: number, paymentMethodId: string) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('http://localhost:3000/api/wallet/deposit', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount, paymentMethodId }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to deposit funds');
+      }
+  
+      const data = await response.json();
+      console.log('Deposit successful:', data);
+      // Update the transactions or balance as needed
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Deposit failed:', error.message);
+      } else {
+        console.error('Deposit failed:', error);
+      }
+    }
   };
 
-  const handleWithdrawFunds = (amount: number) => {
-    console.log(`Withdrew: $${amount}`);
-    // Add logic to update balance here
+  const handleTransferMoney = async (amount: number, recipient: string) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('http://localhost:3000/api/wallet/transfer', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ toUserId: recipient, amount }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to transfer money');
+      }
+
+      console.log(`Transferred $${amount} to ${recipient}`);
+      fetchTransactions();
+    } catch (error) {
+      console.error('Failed to transfer money:', error);
+    }
+  };
+
+  const handleWithdrawFunds = async (amount: number) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('http://localhost:3000/api/wallet/withdraw', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to withdraw funds');
+      }
+
+      console.log(`Withdrew: $${amount}`);
+      fetchTransactions();
+    } catch (error) {
+      console.error('Failed to withdraw funds:', error);
+    }
   };
 
   const handleUploadDocument = async (documentType: string, file: File) => {
@@ -52,7 +138,7 @@ function TransactionsView() {
       const response = await fetch('http://localhost:3000/api/kyc/upload-document', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -65,15 +151,10 @@ function TransactionsView() {
       const data = await response.json();
       console.log('Document uploaded:', data);
 
-      // Refetch transactions or update the KYC status
       fetchKycStatus();
       setIsUploadOpen(false);
     } catch (error) {
-      if (error instanceof Error) {
-        console.error('Failed to upload document:', error.message);
-      } else {
-        console.error('Failed to upload document:', error);
-      }
+      console.error('Failed to upload document:', error);
     }
   };
 
@@ -83,7 +164,7 @@ function TransactionsView() {
       const response = await fetch('http://localhost:3000/api/kyc/status', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -97,22 +178,14 @@ function TransactionsView() {
       setKycStatus(data.status);
       console.log('KYC Status:', data);
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === 'KYC verification not found') {
-          setError('KYC verification not found');
-        } else {
-          console.error('Failed to fetch KYC status:', error.message);
-          setError('An error occurred while fetching KYC status.');
-        }
-      } else {
-        console.error('Failed to fetch KYC status:', error);
-        setError('An unknown error occurred.');
-      }
+      console.error('Failed to fetch KYC status:', error);
+      setError('An error occurred while fetching KYC status.');
     }
   };
 
   useEffect(() => {
     fetchKycStatus();
+    fetchTransactions();
   }, []);
 
   const filteredTransactions = transactions.filter(
@@ -125,16 +198,16 @@ function TransactionsView() {
     return (
       <>
         <StateDisplay
-          iconSrc={kycStatus === 'pending' ? "/assets/pending.svg" : "/assets/pending.svg"}
-          title={kycStatus === 'pending' ? "KYC Pending" : "KYC Not Found"}
+          iconSrc="/assets/pending.svg"
+          title={kycStatus === 'pending' ? 'KYC Pending' : 'KYC Not Found'}
           message={
             kycStatus === 'pending'
-              ? "Your account is still waiting for KYC approval. Please check back later."
-              : "Your KYC information could not be found. Please complete the KYC process or contact support."
+              ? 'Your account is still waiting for KYC approval. Please check back later.'
+              : 'Your KYC information could not be found. Please complete the KYC process or contact support.'
           }
-          showButton={kycStatus === 'pending' || error === 'KYC verification not found'}
+          showButton={true}
           buttonText="Upload Document"
-          onButtonClick={() => setIsUploadOpen(true)} // Make sure this is correctly setting the state
+          onButtonClick={() => setIsUploadOpen(true)}
         />
         <UploadDocumentModal
           isOpen={isUploadOpen}
@@ -148,7 +221,7 @@ function TransactionsView() {
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Transaction Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <button
           onClick={() => setIsTransferOpen(true)}
           className="flex items-center justify-center bg-blue-600 text-white py-2 px-4 rounded-lg shadow-lg hover:bg-blue-700 transform hover:scale-105 transition duration-300"
@@ -196,8 +269,12 @@ function TransactionsView() {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredTransactions.map((transaction) => (
               <tr key={transaction.id}>
-                <td className="px-2 py-4 sm:px-6 whitespace-nowrap text-sm text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</td>
-                <td className="px-2 py-4 sm:px-6 whitespace-nowrap text-sm text-gray-900">{transaction.type}</td>
+                <td className="px-2 py-4 sm:px-6 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(transaction.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-2 py-4 sm:px-6 whitespace-nowrap text-sm text-gray-900">
+                  {transaction.type}
+                </td>
                 <td className={`px-2 py-4 sm:px-6 whitespace-nowrap text-sm text-right font-medium ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   ${Math.abs(transaction.amount).toFixed(2)}
                 </td>
