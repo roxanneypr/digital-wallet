@@ -1,132 +1,190 @@
-import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
-import { PlusCircle, CreditCard, Building, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, CreditCard, Trash2 } from 'lucide-react';
 import StateDisplay from '../components/StateDisplay';
 
-interface Account {
-  id: number;
-  type: string;
-  name: string;
+interface Wallet {
+  id: string;
   balance: number;
 }
 
-interface Bank {
-  id: number;
-  name: string;
-  accountNumber: string;
-}
-
 interface PaymentMethod {
-  id: number;
+  id: string;
   type: string;
-  last4: string;
-  expiryDate: string;
+  card?: {
+    brand: string;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  };
+  isDefault: boolean;
 }
 
 function AccountManagement() {
-  const [accounts, setAccounts] = useState<Account[]>([
-    { id: 1, type: 'Checking', name: 'Main Checking', balance: 5000 },
-    { id: 2, type: 'Savings', name: 'Emergency Fund', balance: 10000 },
-  ]);
-
-  const [linkedBanks, setLinkedBanks] = useState<Bank[]>([
-    { id: 1, name: 'Bank of America', accountNumber: '****1234' },
-  ]);
-
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    { id: 1, type: 'Credit Card', last4: '5678', expiryDate: '12/24' },
-  ]);
-
-  const [newAccountName, setNewAccountName] = useState<string>('');
-  const [newAccountType, setNewAccountType] = useState<string>('Checking');
-  const [newBankName, setNewBankName] = useState<string>('');
-  const [newBankAccountNumber, setNewBankAccountNumber] = useState<string>('');
-  const [newCardNumber, setNewCardNumber] = useState<string>('');
-  const [newCardExpiry, setNewCardExpiry] = useState<string>('');
-  const [newCardCVV, setNewCardCVV] = useState<string>('');
-
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null); // Only one payment method
+  const [newPaymentMethodId, setNewPaymentMethodId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate a data fetch with a timeout
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const walletResponse = await fetch('http://localhost:3000/api/wallet/balance', {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
+        });
+
+        if (!walletResponse.ok) {
+          const errorData = await walletResponse.json();
+          if (errorData.error === "Wallet not found") {
+            setWallet(null); // No wallet exists
+          } else {
+            throw new Error(`Failed to fetch wallet: ${errorData.error || walletResponse.status}`);
+          }
+        } else {
+          const walletData = await walletResponse.json();
+          setWallet(walletData);
+
+          // Only fetch payment methods if the wallet exists
+          if (walletData && walletData.id) {
+            const paymentMethodsResponse = await fetch('http://localhost:3000/api/wallet/payment-methods', {
+              method: 'GET',
+              headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
+            });
+
+            if (!paymentMethodsResponse.ok) {
+              throw new Error(`Failed to fetch payment methods: ${paymentMethodsResponse.status}`);
+            }
+
+            const paymentMethodsData = await paymentMethodsResponse.json();
+            if (paymentMethodsData.length > 0) {
+              setPaymentMethod(paymentMethodsData[0]); // Assume only one payment method is allowed
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        if (!(error instanceof Error && error.message.includes("Wallet not found"))) {
+          setError('Failed to fetch data. Please try again later.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const handleAddAccount = (e: FormEvent) => {
-    e.preventDefault();
-    if (newAccountName) {
-      setPending(true);
-      setTimeout(() => {
-        setAccounts([
-          ...accounts,
-          {
-            id: accounts.length + 1,
-            type: newAccountType,
-            name: newAccountName,
-            balance: 0,
-          },
-        ]);
-        setNewAccountName('');
-        setNewAccountType('Checking');
-        setPending(false);
-      }, 1500); // Simulate account creation delay
+  const handleCreateWallet = async () => {
+    setPending(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('http://localhost:3000/api/wallet/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          initialBalance: 0, // Set an initial balance or prompt the user to input one
+        }),
+      });
+
+      if (response.ok) {
+        const walletData = await response.json();
+        setWallet(walletData);
+        setSuccessMessage('Wallet created successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error);
+      }
+    } catch (error) {
+      console.error('Error creating wallet:', error);
+      setError('Failed to create wallet. Please try again later.');
+    } finally {
+      setPending(false);
     }
   };
 
-  const handleLinkBank = (e: FormEvent) => {
+  const handleAddPaymentMethod = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newBankName && newBankAccountNumber) {
+  
+    if (paymentMethod) {
+      alert('You can only have one payment method.');
+      return;
+    }
+  
+    if (newPaymentMethodId) {
       setPending(true);
-      setTimeout(() => {
-        setLinkedBanks([
-          ...linkedBanks,
-          {
-            id: linkedBanks.length + 1,
-            name: newBankName,
-            accountNumber: `****${newBankAccountNumber.slice(-4)}`,
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('http://localhost:3000/api/wallet/add-payment-method', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
-        ]);
-        setNewBankName('');
-        setNewBankAccountNumber('');
+          body: JSON.stringify({
+            paymentMethodId: newPaymentMethodId,
+          }),
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to add payment method: ${errorData.error || response.status}`);
+        }
+  
+        const paymentMethodData = await response.json();
+        setPaymentMethod(paymentMethodData);
+        setSuccessMessage('Payment method added successfully!');
+  
+        // Clear the form input
+        setNewPaymentMethodId('');
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error('Error adding payment method:', error.message);
+          setError(`Failed to add payment method: ${error.message}`);
+        } else {
+          console.error('Unexpected error:', error);
+          setError('An unexpected error occurred. Please try again later.');
+        }
+      } finally {
         setPending(false);
-      }, 1500); // Simulate bank linking delay
+      }
     }
   };
+  
 
-  const handleAddPaymentMethod = (e: FormEvent) => {
-    e.preventDefault();
-    if (newCardNumber && newCardExpiry && newCardCVV) {
-      setPending(true);
-      setTimeout(() => {
-        setPaymentMethods([
-          ...paymentMethods,
-          {
-            id: paymentMethods.length + 1,
-            type: 'Credit Card',
-            last4: newCardNumber.slice(-4),
-            expiryDate: newCardExpiry,
-          },
-        ]);
-        setNewCardNumber('');
-        setNewCardExpiry('');
-        setNewCardCVV('');
-        setPending(false);
-      }, 1500); // Simulate payment method addition delay
+  const handleRemovePaymentMethod = async () => {
+    if (!paymentMethod) return;
+
+    setPending(true);
+    try {
+      const response = await fetch(`http://localhost:3000/api/wallet/payment-methods/${paymentMethod.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+
+      if (response.ok) {
+        setPaymentMethod(null); // Remove the payment method
+        setSuccessMessage('Payment method removed successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error);
+      }
+    } catch (error) {
+      console.error('Error removing payment method:', error);
+      setError('Failed to remove payment method. Please try again later.');
+    } finally {
+      setPending(false);
     }
-  };
-
-  const handleRemoveAccount = (id: number) => {
-    setAccounts(accounts.filter((account) => account.id !== id));
-  };
-
-  const handleRemoveBank = (id: number) => {
-    setLinkedBanks(linkedBanks.filter((bank) => bank.id !== id));
-  };
-
-  const handleRemovePaymentMethod = (id: number) => {
-    setPaymentMethods(paymentMethods.filter((method) => method.id !== id));
   };
 
   if (loading) {
@@ -139,180 +197,107 @@ function AccountManagement() {
 
   if (pending) {
     return (
-      <StateDisplay 
-        iconSrc="/assets/pending.svg" 
-        title="Pending Account" 
-        message="Your account is still waiting for KYC approval." 
-        altText="Pending" 
+      <StateDisplay
+        iconSrc="/assets/pending.svg"
+        title="Processing"
+        message="Please wait while we process your request."
+        altText="Pending"
       />
     );
   }
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-      {/* Accounts Section */}
-      <div className="bg-white shadow overflow-hidden rounded-lg">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Your Accounts</h3>
+      {/* Display error or success messages */}
+      {error && (
+        <div className="bg-red-100 text-red-700 p-4 rounded-lg">
+          {error}
         </div>
-        <div className="border-t border-gray-200">
-          <ul className="divide-y divide-gray-200">
-            {accounts.map((account) => (
-              <li key={account.id} className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-[#0c55e9] truncate">{account.name}</p>
-                    <p className="text-sm text-gray-500">{account.type}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      ${account.balance.toFixed(2)}
-                    </p>
-                    <button onClick={() => handleRemoveAccount(account.id)} className="ml-2 text-red-600 hover:text-red-900">
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+      )}
+      {successMessage && (
+        <div className="bg-green-100 text-green-700 p-4 rounded-lg">
+          {successMessage}
         </div>
-        <div className="px-4 py-4 sm:px-6">
-          <form onSubmit={handleAddAccount} className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <input
-              type="text"
-              value={newAccountName}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewAccountName(e.target.value)}
-              placeholder="Account Name"
-              className="flex-grow shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
-            />
-            <select
-              value={newAccountType}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => setNewAccountType(e.target.value)}
-              className="shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
-            >
-              <option value="Checking">Checking</option>
-              <option value="Savings">Savings</option>
-            </select>
+      )}
+
+      {/* Wallet Section */}
+      {wallet ? (
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Your Wallet</h3>
+          </div>
+          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+            <p className="text-sm font-medium text-[#0c55e9]">Balance: ${wallet.balance.toFixed(2)}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Create Your Wallet</h3>
+          </div>
+          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
             <button
-              type="submit"
+              onClick={handleCreateWallet}
               className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#0c55e9] hover:bg-[#0a4bcc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0c55e9]"
             >
               <PlusCircle size={18} className="mr-2" />
-              Add Account
+              Create Wallet
             </button>
-          </form>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Linked Bank Accounts Section */}
-      <div className="bg-white shadow overflow-hidden rounded-lg">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Linked Bank Accounts</h3>
-        </div>
-        <div className="border-t border-gray-200">
-          <ul className="divide-y divide-gray-200">
-            {linkedBanks.map((bank) => (
-              <li key={bank.id} className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-[#0c55e9] truncate">{bank.name}</p>
-                    <p className="text-sm text-gray-500">Account: {bank.accountNumber}</p>
-                  </div>
-                  <button onClick={() => handleRemoveBank(bank.id)} className="text-red-600 hover:text-red-900">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="px-4 py-4 sm:px-6">
-          <form onSubmit={handleLinkBank} className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <input
-              type="text"
-              value={newBankName}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewBankName(e.target.value)}
-              placeholder="Bank Name"
-              className="flex-grow shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
-            />
-            <input
-              type="text"
-              value={newBankAccountNumber}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewBankAccountNumber(e.target.value)}
-              placeholder="Account Number"
-              className="flex-grow shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
-            />
-            <button
-              type="submit"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#0c55e9] hover:bg-[#0a4bcc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0c55e9]"
-            >
-              <Building size={18} className="mr-2" />
-              Link Bank
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Payment Methods Section */}
-      <div className="bg-white shadow overflow-hidden rounded-lg">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Payment Methods</h3>
-        </div>
-        <div className="border-t border-gray-200">
-          <ul className="divide-y divide-gray-200">
-            {paymentMethods.map((method) => (
-              <li key={method.id} className="px-4 py-4 sm:px-6">
+      {/* Payment Method Section */}
+      {wallet && (
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Payment Method</h3>
+          </div>
+          <div className="border-t border-gray-200">
+            {paymentMethod ? (
+              <div className="px-4 py-4 sm:px-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-[#0c55e9] truncate">
-                      {method.type} ending in {method.last4}
+                      {paymentMethod.type} ending in {paymentMethod.card?.last4 || 'N/A'}
                     </p>
-                    <p className="text-sm text-gray-500">Expires: {method.expiryDate}</p>
+                    <p className="text-sm text-gray-500">
+                      Expires: {paymentMethod.card?.expMonth}/{paymentMethod.card?.expYear}
+                    </p>
+                    <p className="text-sm text-gray-500">ID: {paymentMethod.id}</p>
                   </div>
-                  <button onClick={() => handleRemovePaymentMethod(method.id)} className="text-red-600 hover:text-red-900">
+                  <button
+                    onClick={handleRemovePaymentMethod}
+                    className="text-red-600 hover:text-red-900"
+                  >
                     <Trash2 size={18} />
                   </button>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+            ) : (
+              <div className="px-4 py-4 sm:px-6">
+                <form onSubmit={handleAddPaymentMethod} className="space-y-2">
+                  <input
+                    type="text"
+                    value={newPaymentMethodId}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPaymentMethodId(e.target.value)}
+                    placeholder="Payment Method ID"
+                    className="w-full shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#0c55e9] hover:bg-[#0a4bcc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0c55e9]"
+                  >
+                    <CreditCard size={18} className="mr-2" />
+                    Add Payment Method
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="px-4 py-4 sm:px-6">
-          <form onSubmit={handleAddPaymentMethod} className="space-y-2">
-            <input
-              type="text"
-              value={newCardNumber}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewCardNumber(e.target.value)}
-              placeholder="Card Number"
-              className="w-full shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
-            />
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-              <input
-                type="text"
-                value={newCardExpiry}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewCardExpiry(e.target.value)}
-                placeholder="MM/YY"
-                className="flex-grow shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
-              />
-              <input
-                type="text"
-                value={newCardCVV}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewCardCVV(e.target.value)}
-                placeholder="CVV"
-                className="flex-grow shadow-sm focus:ring-[#0c55e9] focus:border-[#0c55e9] block sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#0c55e9] hover:bg-[#0a4bcc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0c55e9]"
-            >
-              <CreditCard size={18} className="mr-2" />
-              Add Payment Method
-            </button>
-          </form>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

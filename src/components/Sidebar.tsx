@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, CreditCard, DollarSign, Bell, User, Settings, LogOut, ShoppingBag } from 'lucide-react';
+import { useAuth } from '../context/AuthProvider';
 
 interface SidebarProps {
   activeTab: string;
@@ -10,14 +11,17 @@ interface SidebarProps {
 }
 
 function Sidebar({ activeTab, onTabChange, onLogout, isOpen, onToggle }: SidebarProps) {
+  const { kycStatus } = useAuth(); // Fetch the KYC status from the AuthContext
+  const isKycApproved = kycStatus === 'approved';
+
   const sidebarLinks = [
-    { icon: <Home />, label: 'Home', key: 'home' },
-    { icon: <CreditCard />, label: 'Accounts', key: 'accounts' },
-    { icon: <DollarSign />, label: 'Transactions', key: 'transactions' },
-    { icon: <ShoppingBag />, label: 'Store Purchase', key: 'store-purchase' },
-    { icon: <Bell />, label: 'Notifications', key: 'notifications' },
-    { icon: <User />, label: 'Profile', key: 'profile' },
-    { icon: <Settings />, label: 'Settings', key: 'settings' },
+    { icon: <Home />, label: 'Home', key: 'home', clickable: true },
+    { icon: <CreditCard />, label: 'Accounts', key: 'accounts', clickable: isKycApproved },
+    { icon: <DollarSign />, label: 'Transactions', key: 'transactions', clickable: isKycApproved },
+    { icon: <ShoppingBag />, label: 'Store Purchase', key: 'store-purchase', clickable: isKycApproved },
+    { icon: <Bell />, label: 'Notifications', key: 'notifications', clickable: true },
+    { icon: <User />, label: 'Profile', key: 'profile', clickable: true },
+    { icon: <Settings />, label: 'Settings', key: 'settings', clickable: true },
   ];
 
   return (
@@ -36,12 +40,19 @@ function Sidebar({ activeTab, onTabChange, onLogout, isOpen, onToggle }: Sidebar
             <button
               key={link.key}
               className={`flex items-center w-full py-2 px-4 ${
-                activeTab === link.key ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+                activeTab === link.key
+                  ? 'bg-blue-100 text-blue-600'
+                  : link.clickable
+                  ? 'text-gray-600 hover:bg-gray-100'
+                  : 'text-gray-400 cursor-not-allowed'
               }`}
               onClick={() => {
-                onTabChange(link.key);
-                onToggle(); // Close the sidebar on mobile when a link is clicked
+                if (link.clickable) {
+                  onTabChange(link.key);
+                  onToggle(); // Close the sidebar on mobile when a link is clicked
+                }
               }}
+              disabled={!link.clickable}
             >
               {React.cloneElement(link.icon, { size: 18, className: 'mr-2' })}
               {link.label}

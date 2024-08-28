@@ -1,35 +1,46 @@
-import React, { useState, ChangeEvent } from 'react';
-import { User, Mail, Phone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail } from 'lucide-react';
 
 interface Profile {
   name: string;
   email: string;
-  phone: string;
 }
 
 const ProfileView: React.FC = () => {
-  const [profile, setProfile] = useState<Profile>({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-  });
+  const [profile, setProfile] = useState<Profile>({ name: '', email: '' });
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      setLoading(true);
+      try {
+        // Fetch the user data from localStorage
+        const storedUser = localStorage.getItem('userInfo');
+        const storedUserData = storedUser ? JSON.parse(storedUser) : null;
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
+        if (storedUserData) {
+          setProfile({
+            name: `${storedUserData.firstName} ${storedUserData.lastName}`,
+            email: storedUserData.email,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load user profile", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Here you would typically make an API call to update the user's profile
-    alert('Profile updated successfully!');
-  };
+    fetchUserProfile();
+  }, []);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile((prevProfile) => ({ ...prevProfile, [name]: value }));
-  };
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <img src="/assets/loading.svg" alt="Loading..." className="w-16 h-16" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -43,17 +54,7 @@ const ProfileView: React.FC = () => {
               <User className="mr-2" size={18} /> Full name
             </dt>
             <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="name"
-                  value={profile.name}
-                  onChange={handleChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              ) : (
-                profile.name
-              )}
+              {profile.name}
             </dd>
           </div>
           <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -61,55 +62,10 @@ const ProfileView: React.FC = () => {
               <Mail className="mr-2" size={18} /> Email address
             </dt>
             <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              {isEditing ? (
-                <input
-                  type="email"
-                  name="email"
-                  value={profile.email}
-                  onChange={handleChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              ) : (
-                profile.email
-              )}
-            </dd>
-          </div>
-          <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt className="text-sm font-medium text-gray-500 flex items-center">
-              <Phone className="mr-2" size={18} /> Phone number
-            </dt>
-            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              {isEditing ? (
-                <input
-                  type="tel"
-                  name="phone"
-                  value={profile.phone}
-                  onChange={handleChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              ) : (
-                profile.phone
-              )}
+              {profile.email}
             </dd>
           </div>
         </dl>
-      </div>
-      <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
-        {isEditing ? (
-          <button
-            onClick={handleSave}
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Save
-          </button>
-        ) : (
-          <button
-            onClick={handleEdit}
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Edit
-          </button>
-        )}
       </div>
     </div>
   );

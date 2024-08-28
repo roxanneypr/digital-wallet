@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrCode, CreditCard } from 'lucide-react';
+import { QrCode } from 'lucide-react';
 
 function QRPaymentsView() {
   const [scanningMode, setScanningMode] = useState<'generate' | 'scan' | null>(null);
@@ -9,7 +9,6 @@ function QRPaymentsView() {
   const [recipientId, setRecipientId] = useState<string | null>(null);
   const [paymentMethodId, setPaymentMethodId] = useState<string>('');
 
-  // Function to generate QR Code
   const generateQRCode = async () => {
     if (amount === null || amount <= 0) {
       alert('Please enter a valid amount.');
@@ -21,7 +20,7 @@ function QRPaymentsView() {
       const response = await fetch('http://localhost:3000/api/wallet/generate-qr', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ amount }),
@@ -44,14 +43,13 @@ function QRPaymentsView() {
     }
   };
 
-  // Function to handle scanning a QR Code
   const handleScanQRCode = async (qrCode: string) => {
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`http://localhost:3000/api/wallet/initiate-qr-payment`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ paymentId: qrCode, paymentMethodId }),
@@ -65,7 +63,8 @@ function QRPaymentsView() {
       const data = await response.json();
       setAmount(data.amount);
       setRecipientId(data.recipientId);
-      console.log('Payment initiated:', data);
+
+      await transferMoney(data.amount, data.recipientId);
     } catch (error) {
       if (error instanceof Error) {
         console.error('Failed to scan QR code:', error.message);
@@ -75,35 +74,35 @@ function QRPaymentsView() {
     }
   };
 
-  const handleConfirmPayment = async () => {
+  const transferMoney = async (amount: number, recipientId: string) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:3000/api/wallet/confirm-qr-payment`, {
+      const response = await fetch('http://localhost:3000/api/wallet/transfer', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ paymentIntentId: paymentId, paymentMethodId }),
+        body: JSON.stringify({ toUserId: recipientId, amount }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to confirm payment');
+        throw new Error(errorData.error || 'Failed to transfer money');
       }
 
       const data = await response.json();
-      console.log('Payment confirmed:', data);
+      console.log('Money transferred:', data);
+      alert(`Payment of $${amount.toFixed(2)} to recipient ${recipientId} was successful.`);
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Failed to confirm payment:', error.message);
+        console.error('Failed to transfer money:', error.message);
       } else {
-        console.error('Failed to confirm payment:', error);
+        console.error('Failed to transfer money:', error);
       }
     }
   };
 
-  // Simulated QR code scanner
   const QRScanner = ({ onScan }: { onScan: (qrCode: string) => void }) => (
     <div className="bg-gray-200 p-4 rounded-lg text-center">
       <p className="mb-2">Scanning QR Code...</p>
@@ -123,9 +122,9 @@ function QRPaymentsView() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-col items-center">
-        <div className="mb-4">
+        <div className="mb-4 w-full">
           <input
             type="number"
             placeholder="Enter amount"
@@ -134,10 +133,10 @@ function QRPaymentsView() {
             className="p-2 border rounded w-full text-center"
           />
         </div>
-        <div className="mb-4">
+        <div className="mb-4 w-full">
           <button
-            onClick={() => generateQRCode()}
-            className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            onClick={generateQRCode}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200 flex items-center justify-center"
           >
             <QrCode size={18} className="mr-2" />
             Generate QR Code
@@ -148,10 +147,10 @@ function QRPaymentsView() {
             <img src={qrCodeDataURL} alt="Generated QR Code" className="w-48 h-48" />
           </div>
         )}
-        <div className="mb-4">
+        <div className="mb-4 w-full">
           <button
             onClick={() => setScanningMode('scan')}
-            className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200 flex items-center justify-center"
           >
             <QrCode size={18} className="mr-2" />
             Scan QR Code
@@ -160,28 +159,6 @@ function QRPaymentsView() {
       </div>
 
       {scanningMode === 'scan' && <QRScanner onScan={handleScanQRCode} />}
-
-      {amount && recipientId && (
-        <div className="mt-4">
-          <p className="text-lg font-medium text-gray-900">Payment Details</p>
-          <p className="text-gray-700">Amount: ${amount.toFixed(2)}</p>
-          <p className="text-gray-700">Recipient ID: {recipientId}</p>
-          <input
-            type="text"
-            placeholder="Enter Payment Method ID"
-            value={paymentMethodId}
-            onChange={(e) => setPaymentMethodId(e.target.value)}
-            className="mt-2 p-2 border rounded"
-          />
-          <button
-            onClick={handleConfirmPayment}
-            className="mt-2 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            <CreditCard size={18} className="mr-2" />
-            Confirm Payment
-          </button>
-        </div>
-      )}
     </div>
   );
 }
